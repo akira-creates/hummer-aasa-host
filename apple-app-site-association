@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appID": "8Q877BTP26.com.mikegreerhomes.hummer",
+        "paths": ["*"]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [ "8Q877BTP26.com.mikegreerhomes.hummer" ]
+  }
+}
