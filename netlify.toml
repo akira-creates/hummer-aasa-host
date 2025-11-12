@@ -1,0 +1,30 @@
+# netlify.toml
+# This file tells Netlify how to handle your site
+
+[build]
+  # Skip the build process - we're just serving static files
+  command = "echo 'No build needed'"
+  publish = "."
+
+[[headers]]
+  # Set proper Content-Type for the AASA file
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  # Also handle if someone adds .json extension
+  for = "/.well-known/apple-app-site-association.json"
+  [headers.values]
+    Content-Type = "application/json"
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=3600"
+
+# Redirect from .json version to extensionless version if needed
+[[redirects]]
+  from = "/.well-known/apple-app-site-association.json"
+  to = "/.well-known/apple-app-site-association"
+  status = 200
+  force = true
