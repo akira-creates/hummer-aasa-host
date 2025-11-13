@@ -100,6 +100,37 @@
             cursor: not-allowed;
         }
 
+        .cancel-button {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            color: #666;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .cancel-button:active {
+            transform: scale(0.98);
+            background: #f5f5f5;
+        }
+
+        .debug-info {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 11px;
+            color: #666;
+            word-break: break-all;
+            display: none;
+        }
+
         .error-message {
             background: #fee;
             color: #c33;
@@ -175,11 +206,39 @@
                 Log In
             </button>
         </form>
+
+        <button class="cancel-button" id="cancelButton">
+            Cancel
+        </button>
+
+        <div class="debug-info" id="debugInfo">
+            Debug info will appear here...
+        </div>
     </div>
 
     <script>
+        // Enable debug mode - shows more info
+        const DEBUG_MODE = true;
+
+        function log(message) {
+            console.log(message);
+            if (DEBUG_MODE) {
+                const debugDiv = document.getElementById('debugInfo');
+                debugDiv.style.display = 'block';
+                debugDiv.textContent += '\n' + new Date().toISOString() + ': ' + message;
+            }
+        }
+
+        // Cancel button handler
+        document.getElementById('cancelButton').addEventListener('click', function() {
+            log('Cancel button clicked');
+            window.location.href = 'com.mikegreerhomes.hummer://login-cancelled';
+        });
+
+        // Form submission handler
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            log('Form submitted');
 
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
@@ -193,10 +252,13 @@
 
             // Validate inputs
             if (!username || !password) {
+                log('Validation failed: missing username or password');
                 errorDiv.textContent = 'Please enter both username and password';
                 errorDiv.classList.add('show');
                 return;
             }
+
+            log('Credentials entered, username: ' + username);
 
             // Disable button during processing
             submitButton.disabled = true;
@@ -210,28 +272,44 @@
                     timestamp: new Date().toISOString()
                 };
 
+                log('Encoding credentials...');
+
                 // Encode credentials to base64 for URL safety
                 const credentialsJson = JSON.stringify(credentials);
                 const credentialsBase64 = btoa(credentialsJson);
+
+                log('Credentials encoded, length: ' + credentialsBase64.length);
+
+                // Build the redirect URL
+                const redirectUrl = `com.mikegreerhomes.hummer://login-success?credentials=${encodeURIComponent(credentialsBase64)}`;
+                log('Redirect URL: ' + redirectUrl.substring(0, 100) + '...');
 
                 // Show success message
                 successDiv.classList.add('show');
 
                 // Wait a brief moment for visual feedback
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                log('Attempting redirect...');
 
                 // Redirect back to the app using the custom URL scheme
                 // This will close the Safari view and pass credentials back to the app
-                window.location.href = `com.mikegreerhomes.hummer://login-success?credentials=${encodeURIComponent(credentialsBase64)}`;
+                window.location.href = redirectUrl;
 
-                // Fallback: If the custom URL scheme doesn't work, try to post a message
+                log('Redirect initiated');
+
+                // Fallback: If still here after 2 seconds, something went wrong
                 setTimeout(() => {
-                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.loginSuccess) {
-                        window.webkit.messageHandlers.loginSuccess.postMessage(credentials);
-                    }
-                }, 1000);
+                    log('Still on login page after 2 seconds - redirect may have failed');
+                    errorDiv.textContent = 'Unable to return to app. Please close this window and try again.';
+                    errorDiv.classList.add('show');
+                    successDiv.classList.remove('show');
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Log In';
+                }, 2000);
 
             } catch (error) {
+                log('Error: ' + error.message);
                 console.error('Login error:', error);
                 errorDiv.textContent = 'An error occurred. Please try again.';
                 errorDiv.classList.add('show');
@@ -242,6 +320,7 @@
 
         // Auto-focus username field
         window.addEventListener('load', () => {
+            log('Page loaded');
             document.getElementById('username').focus();
         });
     </script>
